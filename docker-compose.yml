@@ -1,0 +1,28 @@
+# My Todo: PostgreSQL만 실행합니다. Next.js는 macOS에서 `npm run dev`로 직접 실행합니다.
+# 접속 정보는 같은 폴더의 .env 파일에서 읽어 옵니다 (.env.example 참고).
+
+services:
+  db:
+    image: postgres:17
+    container_name: my-todo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER를 .env에 설정하세요}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD를 .env에 설정하세요}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB를 .env에 설정하세요}
+    ports:
+      # 127.0.0.1에만 열어 같은 네트워크의 다른 기기에서는 접속할 수 없게 합니다.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # 데이터 영구 저장: 컨테이너를 지워도 볼륨은 남습니다.
+      - pgdata:/var/lib/postgresql/data
+      # 최초 실행 시 todos 테이블 생성
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
